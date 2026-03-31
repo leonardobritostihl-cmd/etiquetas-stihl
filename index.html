@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gerador de Etiquetas — 11×9</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange:       #F05A00;
+      --orange-light: #FF7520;
+      --orange-pale:  #FFF0E6;
+      --orange-mid:   #FFD9BC;
+      --white:        #FFFFFF;
+      --bg:           #F7F5F2;
+      --surface:      #FFFFFF;
+      --surface2:     #F2EFE9;
+      --border:       #E0DAD1;
+      --border-strong:#C8C0B4;
+      --text:         #1A1714;
+      --text-muted:   #7A7168;
+      --text-light:   #A89F95;
+      --success:      #1E7E34;
+      --error:        #C0392B;
+      --shadow-sm:    0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-md:    0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top accent ─────────────────────────────────────────────── */
+    .top-stripe {
+      height: 3px;
+      background: var(--orange);
+      flex-shrink: 0;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    .header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 28px;
+      min-height: 64px;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+
+    .header-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--orange);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .header-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: white;
+    }
+
+    .header-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1px;
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.2px;
+    }
+
+    .header-title span {
+      color: var(--orange);
+    }
+
+    .header-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+
+
+    /* ── Tabs ────────────────────────────────────────────────────── */
+    .tab-bar {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      padding: 0 28px;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .tab {
+      padding: 12px 16px 11px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color .15s, border-color .15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab:hover { color: var(--text); }
+
+    .tab.active {
+      color: var(--orange);
+      border-bottom-color: var(--orange);
+      font-weight: 600;
+    }
+
+    .tab-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.5;
+    }
+
+    .tab.active .tab-dot { opacity: 1; }
+
+    /* ── Body ────────────────────────────────────────────────────── */
+    .body {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--bg);
+      padding: 24px 28px;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Card ────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 16px;
+    }
+
+    /* ── Section header ──────────────────────────────────────────── */
+    .section-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+    }
+
+    .section-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      background: var(--orange);
+      transform: rotate(45deg);
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    /* ── Form ────────────────────────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 148px 1fr;
+      row-gap: 0;
+      padding: 8px 20px 16px;
+    }
+
+    .form-label {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px 10px 0;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .form-field { padding: 6px 0 2px; }
+
+    /* ── Input ───────────────────────────────────────────────────── */
+    .field-wrap {
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--white);
+      transition: border-color .15s, box-shadow .15s;
+      overflow: hidden;
+    }
+
+    .field-wrap:focus-within {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(240,90,0,.10);
+    }
+
+    .field-wrap input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 8px 12px;
+      font-size: 13.5px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      caret-color: var(--orange);
+    }
+
+    .field-wrap input::placeholder {
+      color: var(--text-light);
+      font-weight: 400;
+    }
+
+    /* volumes */
+    .vol-row { display: flex; align-items: center; gap: 8px; }
+    .vol-row .field-wrap { flex: 0 0 88px; }
+    .vol-sep { color: var(--text-light); font-size: 17px; font-weight: 300; }
+
+    /* hint */
+    .path-hint {
+      grid-column: 1 / -1;
+      font-size: 11.5px;
+      color: var(--text-light);
+      padding: 8px 0 0;
+      line-height: 1.6;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .path-hint::before {
+      content: '📁';
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ── Divider ─────────────────────────────────────────────────── */
+    .row-divider {
+      grid-column: 1 / -1;
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* ── Action bar ──────────────────────────────────────────────── */
+    .action-bar {
+      background: var(--white);
+      border-top: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      box-shadow: 0 -2px 8px rgba(0,0,0,.04);
+    }
+
+    .btn {
+      border: none;
+      padding: 0 20px;
+      height: 38px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background .15s, color .15s, box-shadow .15s, transform .08s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .btn:active { transform: scale(.98); }
+
+    .btn-primary {
+      background: var(--orange);
+      color: white;
+      margin-left: auto;
+      padding: 0 24px;
+      box-shadow: 0 2px 8px rgba(240,90,0,.30);
+    }
+
+    .btn-primary:hover {
+      background: var(--orange-light);
+      box-shadow: 0 4px 12px rgba(240,90,0,.35);
+    }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    #status {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-light);
+      font-family: 'DM Mono', monospace;
+    }
+
+    #status.ok  { color: var(--success); }
+    #status.err { color: var(--error); }
+
+    /* ── Footer ──────────────────────────────────────────────────── */
+    .footer {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 10px 28px;
+      display: flex;
+      justify-content: flex-end;
+      flex-shrink: 0;
+    }
+
+    .footer-text {
+      font-size: 10.5px;
+      font-weight: 400;
+      color: var(--text-light);
+    }
+
+    .footer-text strong { color: var(--orange); font-weight: 600; }
+
+    .bottom-stripe {
+      height: 3px;
+      background: linear-gradient(90deg, var(--orange) 0%, var(--orange-light) 100%);
+      flex-shrink: 0;
+    }
+
+    /* ── Help / Como usar ────────────────────────────────────────── */
+    .help-body {
+      padding: 18px 20px 20px;
+    }
+
+    .help-intro {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    .help-intro strong { color: var(--text); }
+    .help-intro em { color: var(--orange); font-style: normal; font-weight: 600; }
+
+    .step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--orange);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .step-content {
+      flex: 1;
+      padding-bottom: 4px;
+    }
+
+    .step-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+
+    .step-content p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    .step-content code {
+      font-family: 'DM Mono', monospace;
+      font-size: 11.5px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: var(--orange);
+    }
+
+    .step-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 14px 0 14px 44px;
+    }
+
+    .help-tip {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--orange-pale);
+      border: 1px solid var(--orange-mid);
+      border-radius: 7px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .help-tip svg {
+      flex-shrink: 0;
+      margin-top: 1px;
+      stroke: var(--orange);
+    }
+
+    .help-tip code {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      background: rgba(240,90,0,.12);
+      border: 1px solid var(--orange-mid);
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: var(--orange);
+    }
+
+    .help-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .help-list li {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.65;
+      padding-left: 18px;
+      position: relative;
+    }
+
+    .help-list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--orange);
+      opacity: 0.6;
+    }
+
+    .help-list li strong { color: var(--text); font-weight: 600; }
+    .help-list li em { color: var(--text); font-style: normal; }
+  </style>
+</head>
+<body>
+
+<div class="top-stripe"></div>
+
+<!-- ── Header ──────────────────────────────────────────────────────── -->
+<div class="header">
+  <div class="header-icon">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h12v1.5H6zm0 3h8v1.5H6z"/>
+    </svg>
+  </div>
+  <div class="header-info">
+    <div class="header-title">Gerador de Etiquetas <span>11 × 9 cm</span></div>
+    <div class="header-sub">Preencha os dados e gere sua etiqueta de envio em PDF</div>
+  </div>
+
+</div>
+
+<!-- ── Tabs ──────────────────────────────────────────────────────────── -->
+<div class="tab-bar">
+  <button class="tab active" data-tab="destinatario"><span class="tab-dot"></span>Destinatário</button>
+  <button class="tab"        data-tab="envio"><span class="tab-dot"></span>Envio</button>
+  <button class="tab"        data-tab="arquivo"><span class="tab-dot"></span>Arquivo</button>
+  <button class="tab"        data-tab="ajuda"><span class="tab-dot"></span>Como usar</button>
+</div>
+
+<!-- ── Body ──────────────────────────────────────────────────────────── -->
+<div class="body">
+
+  <!-- Destinatário -->
+  <div class="tab-panel active" id="tab-destinatario">
+    <div class="card">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <span class="section-title">Dados do Destinatário</span>
+      </div>
+      <div class="form-grid">
+
+        <label class="form-label">Nome</label>
+        <div class="form-field">
+          <div class="field-wrap"><input id="nome" placeholder="Nome completo ou razão social"></div>
+        </div>
+
+        <div class="row-divider"></div>
+
+        <label class="form-label">Endereço</label>
+        <div class="form-field">
+          <div class="field-wrap"><input id="endereco" placeholder="Rua, Av., número…"></div>
+        </div>
+
+        <div class="row-divider"></div>
+
+        <label class="form-label">Bairro</label>
+        <div class="form-field">
+          <div class="field-wrap"><input id="bairro" placeholder="Bairro"></div>
+        </div>
+
+        <div class="row-divider"></div>
+
+        <label class="form-label">Município</label>
+        <div class="form-field">
+          <div class="field-wrap"><input id="municipio" placeholder="Cidade"></div>
+        </div>
+
+        <div class="row-divider"></div>
+
+        <label class="form-label">UF</label>
+        <div class="form-field">
+          <div class="field-wrap" style="max-width:80px"><input id="uf" placeholder="SP"></div>
+        </div>
+
+        <div class="row-divider"></div>
+
+        <label class="form-label">CEP</label>
+        <div class="form-field">
+          <div class="field-wrap"><input id="cep" placeholder="00000-000"></div>
+        </div>
+
+        <div class="row-divider"></div>
+
+        <label class="form-label">CPF / CNPJ</label>
+        <div class="form-field">
+          <div class="field-wrap"><input id="cpf_cnpj" placeholder="000.000.000-00"></div>
+        </div>
+
+        <div class="row-divider"></div>
+
+        <label class="form-label">Fone</label>
+        <div class="form-field">
+          <div class="field-wrap"><input id="fone" placeholder="(00) 00000-0000"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Envio -->
+  <div class="tab-panel" id="tab-envio">
+    <div class="card">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <span class="section-title">Informações de Envio</span>
+      </div>
+      <div class="form-grid">
+
+        <label class="form-label">Nota Fiscal</label>
+        <div class="form-field">
+          <div class="field-wrap"><input id="nota_fiscal" placeholder="Ex: 1234567"></div>
+        </div>
+
+        <div class="row-divider"></div>
+
+        <label class="form-label">Transportadora</label>
+        <div class="form-field">
+          <div class="field-wrap"><input id="transportadora" placeholder="Ex: Rodonaves, Correios…"></div>
+        </div>
+
+        <div class="row-divider"></div>
+
+        <label class="form-label">Peso (kg)</label>
+        <div class="form-field">
+          <div class="field-wrap" style="max-width:140px"><input id="peso_kg" placeholder="Ex: 3.5"></div>
+        </div>
+
+        <div class="row-divider"></div>
+
+        <label class="form-label">Volumes</label>
+        <div class="form-field">
+          <div class="vol-row">
+            <div class="field-wrap"><input id="volume_atual" placeholder="Atual"></div>
+            <span class="vol-sep">/</span>
+            <div class="field-wrap"><input id="volume_total" placeholder="Total"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Arquivo -->
+  <div class="tab-panel" id="tab-arquivo">
+    <div class="card">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <span class="section-title">Nome do Arquivo</span>
+      </div>
+      <div class="form-grid">
+
+        <label class="form-label">Nome do arquivo</label>
+        <div class="form-field">
+          <div class="field-wrap"><input id="nome_arquivo" placeholder="etiqueta  (sem .pdf)"></div>
+        </div>
+
+        <p class="path-hint">
+          O arquivo será baixado diretamente pelo navegador na pasta de Downloads padrão do sistema.
+        </p>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Como usar -->
+  <div class="tab-panel" id="tab-ajuda">
+
+    <div class="card">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <span class="section-title">Visão Geral</span>
+      </div>
+      <div class="help-body">
+        <p class="help-intro">Esta ferramenta gera etiquetas de envio no formato <strong>11 × 9 cm</strong> em PDF, prontas para impressão. Preencha os dados nas abas, configure o nome do arquivo e clique em <em>Gerar Etiqueta PDF</em>.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <span class="section-title">Passo a Passo</span>
+      </div>
+      <div class="help-body">
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Aba — Destinatário</div>
+            <p>Preencha os dados de quem receberá o pacote: nome, endereço completo, bairro, município, UF, CEP, CPF/CNPJ e telefone. Todos os campos são obrigatórios.</p>
+            <div class="help-tip">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              O CEP informado é usado para gerar o código de barras na etiqueta — digite no formato <code>00000-000</code>.
+            </div>
+          </div>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">Aba — Envio</div>
+            <p>Informe os dados do despacho: número da nota fiscal, nome da transportadora, peso total em quilogramas e a contagem de volumes (ex.: <code>1 / 3</code> indica o primeiro de três volumes).</p>
+          </div>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Aba — Arquivo</div>
+            <p>Defina o nome do arquivo PDF que será baixado. Não é necessário adicionar a extensão <code>.pdf</code> — ela é inserida automaticamente. Se o campo ficar em branco, o arquivo será salvo como <code>etiqueta.pdf</code>.</p>
+          </div>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-title">Gerar Etiqueta PDF</div>
+            <p>Clique no botão laranja <strong>Gerar Etiqueta PDF</strong> na barra inferior. O sistema valida todos os campos — se algum estiver vazio, uma lista de pendências será exibida. Após confirmar, o PDF é gerado e baixado automaticamente.</p>
+          </div>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <div class="step-title">Limpar Campos</div>
+            <p>Use o botão <strong>Limpar campos</strong> para apagar todos os dados e iniciar um novo preenchimento. Uma confirmação será solicitada antes de apagar.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <div class="section-dot"></div>
+        <span class="section-title">Dicas de Impressão</span>
+      </div>
+      <div class="help-body">
+        <ul class="help-list">
+          <li>Abra o PDF gerado e imprima em papel de etiqueta adesivo ou folha comum cortada no tamanho <strong>11 × 9 cm</strong>.</li>
+          <li>Nas configurações de impressão, desative o redimensionamento automático (<em>Tamanho real / 100%</em>) para garantir as dimensões corretas.</li>
+          <li>Recomenda-se verificar o código de barras com um leitor antes de despachar o pedido.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ── Action bar ─────────────────────────────────────────────────────── -->
+<div class="action-bar">
+  <button class="btn btn-secondary" onclick="limpar()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    Limpar campos
+  </button>
+  <span id="status"></span>
+  <button class="btn btn-primary" onclick="gerarEtiqueta()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Gerar Etiqueta PDF
+  </button>
+</div>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────── -->
+<div class="footer">
+  <span class="footer-text">Desenvolvido por <strong>Leonardo Lazzaron</strong> &nbsp;·&nbsp; STIHL Ferramentas Motorizadas Ltda.</span>
+</div>
+<div class="bottom-stripe"></div>
+
+<canvas id="barcodeCanvas" style="display:none"></canvas>
+
+<script>
+const REMETENTE = {
+  nome:     'STIHL Ferramentas Motorizadas Ltda.',
+  endereco: 'Av. São Borja, 3000 - Fazenda São Borja',
+  cidade:   'São Leopoldo',
+  estado:   'RS',
+  cep:      '93032-524',
+};
+
+function criarEtiqueta(dados, nomeArquivo) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+  const ETIQ_LARG = 110, ETIQ_ALT = 70, origemX = 10, origemY = 10;
+  doc.rect(origemX, origemY, ETIQ_LARG, ETIQ_ALT);
+
+  const pad = 3, esq = origemX + pad, dir_ = origemX + ETIQ_LARG - pad;
+  let y = origemY + pad;
+
+  const LOGO_ALT = 9, LOGO_LARG = 28;
+  const xRem = esq + LOGO_LARG + 3;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.text(REMETENTE.nome, xRem, y + (LOGO_ALT - 6));
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6);
+  doc.text(REMETENTE.endereco, xRem, y + LOGO_ALT - 2.5);
+  doc.text(`${REMETENTE.cidade} - ${REMETENTE.estado}  CEP: ${REMETENTE.cep}`, xRem, y + LOGO_ALT + 1);
+
+  y += LOGO_ALT + 3;
+  doc.line(esq, y, dir_, y);
+  y += 3;
+
+  const dest = dados.destinatario;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+  doc.text(dest.nome, esq, y); y += 4;
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+  doc.text(dest.endereco, esq, y);                                    y += 4;
+  doc.text(dest.bairro,   esq, y);                                    y += 4;
+  doc.text(`${dest.municipio} / ${dest.uf}`, esq, y);                 y += 4;
+  doc.text(`CEP: ${dest.cep}  |  CPF/CNPJ: ${dest.cpf_cnpj}`, esq, y); y += 4;
+  doc.text(`Fone: ${dest.fone}`, esq, y);                             y += 6;
+
+  const cepLimpo = dest.cep.replace(/[-\.]/g, '');
+  try {
+    const canvas = document.getElementById('barcodeCanvas');
+    JsBarcode(canvas, cepLimpo, { format:'CODE128', displayValue:false, margin:0, width:2, height:60 });
+    doc.addImage(canvas.toDataURL('image/png'), 'PNG', esq, y - 10, dir_ - esq, 10);
+  } catch(e) {
+    doc.text(`[barcode: ${cepLimpo}]`, esq, y);
+  }
+
+  y += 3;
+  doc.line(esq, y, dir_, y);
+  y += 4;
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+  doc.text(`NF: ${dados.nota_fiscal}`, esq, y);
+  doc.text(`Transportadora: ${dados.transportadora}`, esq, y + 4);
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+  doc.text(`Peso: ${dados.peso_kg} kg | Vol: ${dados.volume_atual}/${dados.volume_total}`, dir_, y + 4, { align:'right' });
+
+  doc.save(nomeArquivo);
+}
+
+function gerarEtiqueta() {
+  const ids = {
+    'Nome':'nome','Endereço':'endereco','Bairro':'bairro','Município':'municipio',
+    'UF':'uf','CEP':'cep','CPF/CNPJ':'cpf_cnpj','Fone':'fone',
+    'Nota Fiscal':'nota_fiscal','Transportadora':'transportadora',
+    'Peso (kg)':'peso_kg','Volume atual':'volume_atual','Volume total':'volume_total',
+  };
+
+  const vazios = Object.entries(ids)
+    .filter(([,id]) => !document.getElementById(id).value.trim())
+    .map(([k]) => k);
+
+  if (vazios.length) {
+    alert('Preencha os seguintes campos:\n\n' + vazios.map(c=>`  • ${c}`).join('\n'));
+    return;
+  }
+
+  const v = id => document.getElementById(id).value.trim();
+
+  const dados = {
+    destinatario: {
+      nome: v('nome'), endereco: v('endereco'), bairro: v('bairro'),
+      municipio: v('municipio'), uf: v('uf').toUpperCase(),
+      fone: v('fone'), cep: v('cep'), cpf_cnpj: v('cpf_cnpj'),
+    },
+    nota_fiscal: v('nota_fiscal'), transportadora: v('transportadora'),
+    peso_kg: v('peso_kg'), volume_atual: v('volume_atual'), volume_total: v('volume_total'),
+  };
+
+  let nomeArquivo = v('nome_arquivo') || 'etiqueta';
+  if (!nomeArquivo.endsWith('.pdf')) nomeArquivo += '.pdf';
+  if (!confirm(`Gerar etiqueta → ${nomeArquivo}?`)) return;
+
+  const status = document.getElementById('status');
+  try {
+    criarEtiqueta(dados, nomeArquivo);
+    status.textContent = '✔ Etiqueta gerada com sucesso.';
+    status.className = 'ok';
+  } catch(e) {
+    status.textContent = '✖ Erro ao gerar etiqueta.';
+    status.className = 'err';
+    alert('Erro ao gerar etiqueta:\n\n' + e.message);
+  }
+}
+
+function limpar() {
+  if (!confirm('Deseja limpar todos os campos?')) return;
+  document.querySelectorAll('input').forEach(el => el.value = '');
+  const s = document.getElementById('status');
+  s.textContent = '✔ Campos limpos.';
+  s.className = 'ok';
+}
+
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
